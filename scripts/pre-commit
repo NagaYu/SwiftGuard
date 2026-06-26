@@ -1,0 +1,66 @@
+#!/bin/sh
+#
+# SwiftGuard pre-commit hook
+# ステージされた .swift ファイルをオンデバイスLLMで監査し、
+# 重大(CRITICAL)な問題が見つかったらコミットをブロックします。
+#
+# インストール:
+#   ./scripts/install-hooks.sh
+# もしくは手動で:
+#   cp scripts/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+#
+# 一時的にスキップしたい場合:
+#   git commit --no-verify
+#
+# 環境変数:
+#   SWIFTGUARD_BIN   swiftguard 実行ファイルのパス（既定: PATH 上の swiftguard）
+#   SWIFTGUARD_SKIP  1 にするとフックを無効化
+
+set -eu
+
+if [ "${SWIFTGUARD_SKIP:-0}" = "1" ]; then
+    exit 0
+fi
+
+# swiftguard バイナリの解決（PATH → .build/release → .build/debug の順）
+BIN="${SWIFTGUARD_BIN:-}"
+if [ -z "$BIN" ]; then
+    if command -v swiftguard >/dev/null 2>&1; then
+        BIN="$(command -v swiftguard)"
+    elif [ -x ".build/release/swiftguard" ]; then
+        BIN=".build/release/swiftguard"
+    elif [ -x ".build/debug/swiftguard" ]; then
+        BIN=".build/debug/swiftguard"
+    else
+        echo "⚠️  swiftguard が見つかりません。'swift build -c release' でビルドするか PATH に追加してください。"
+        echo "    （このコミットはブロックされません）"
+        exit 0
+    fi
+fi
+
+# ステージされた .swift ファイルのみ対象（削除されたファイルは除く）
+STAGED=$(git diff --cached --name-only --diff-filter=ACM -- '*.swift')
+if [ -z "$STAGED" ]; then
+    exit 0
+fi
+
+echo "🛡  SwiftGuard: ステージされた Swift ファイルを監査しています..."
+
+FAILED=0
+for FILE in $STAGED; do
+    [ -f "$FILE" ] || continue
+    # --strict: 重大な問題があれば終了コード1。--quiet: 判定のみ高速表示。
+    if ! "$BIN" --strict --quiet --no-color "$FILE"; then
+        FAILED=1
+    fi
+done
+
+if [ "$FAILED" -ne 0 ]; then
+    echo ""
+    echo "❌ SwiftGuard が重大(CRITICAL)な問題を検出したため、コミットを中止しました。"
+    echo "   問題を修正するか、どうしても必要な場合は 'git commit --no-verify' で回避できます。"
+    exit 1
+fi
+
+echo "✅ SwiftGuard: 重大な問題は検出されませんでした。"
+exit 0

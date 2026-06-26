@@ -1,0 +1,22 @@
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# Xcode
+*.xcodeproj/
+*.xcworkspace/
+DerivedData/
+*.xcuserstate
+
+# 配布ビルド成果物
+dist/
+*.app
+*.dmg
+
+# macOS
+.DS_Store
+
+# エディタ
+.vscode/
+.idea/
