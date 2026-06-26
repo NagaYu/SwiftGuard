@@ -11,7 +11,7 @@ struct SwiftGuardApp: App {
         .commands {
             CommandGroup(replacing: .help) {
                 Link("SwiftGuard を GitHub で見る",
-                     destination: URL(string: "https://github.com/your-org/SwiftGuard")!)
+                     destination: URL(string: "https://github.com/NagaYu/SwiftGuard")!)
             }
         }
     }

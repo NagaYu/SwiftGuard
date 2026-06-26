@@ -35,5 +35,5 @@
 - 🎨 アプリアイコン生成器（AppKit で描画 → `.icns`）
 - 📝 日英バイリンガル README、MIT ライセンス、CI ワークフロー
 
-[Unreleased]: https://github.com/your-org/SwiftGuard/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/your-org/SwiftGuard/releases/tag/v0.1.0
+[Unreleased]: https://github.com/NagaYu/SwiftGuard/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/NagaYu/SwiftGuard/releases/tag/v0.1.0
