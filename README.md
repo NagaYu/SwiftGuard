@@ -105,10 +105,14 @@ swiftguard --quiet ./Sources
 
 # CI / フック用: 重大な問題があれば終了コード 1
 swiftguard --strict ./Sources
+
+# 監査する観点とチェックリストを表示（モデル不要）
+swiftguard --rules
 ```
 
 | オプション | 説明 |
 |-----------|------|
+| `--rules` | 監査する観点とチェックリストを表示して終了（モデル不要） |
 | `--quiet` | Markdown レビューを省き、リスク判定バッジのみ表示（高速） |
 | `--strict` | 🔴 CRITICAL が 1 件でもあれば exit code `1` |
 | `--no-color` | カラー出力を無効化 |
@@ -170,7 +174,8 @@ SwiftGuard/
 ├── Sources/
 │   ├── SwiftGuardCore/        # 🧠 共通コア（CLI / GUI 共有）
 │   │   ├── AuditEngine.swift      # FoundationModels 呼び出し・ストリーミング
-│   │   ├── AuditPrompt.swift      # システム指示（役割）とプロンプト
+│   │   ├── AuditCategory.swift    # 監査観点の定義（チェックリスト）
+│   │   ├── AuditPrompt.swift      # 観点からシステム指示を自動生成
 │   │   ├── RiskAssessment.swift   # @Generable による構造化リスク判定
 │   │   └── FileScanner.swift      # .swift ファイルの再帰収集
 │   ├── swiftguard/            # 💻 CLI（swift-argument-parser）
@@ -191,6 +196,9 @@ SwiftGuard/
    GUI  ───────▶ │  AuditEngine / FileScanner │     (On-device LLM / PCC)
                  └───────────────────────────┘
 ```
+
+> **観点の拡張は簡単**: `Sources/SwiftGuardCore/AuditCategory.swift` の `AuditCategory.all` に
+> 1 要素を追加するだけで、CLI・GUI・pre-commit のプロンプトすべてに自動反映されます。
 
 ---
 

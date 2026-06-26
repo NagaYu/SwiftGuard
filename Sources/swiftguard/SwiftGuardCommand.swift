@@ -21,7 +21,7 @@ struct SwiftGuardCommand: AsyncParsableCommand {
     )
 
     @Argument(help: "監査対象のファイルまたはディレクトリのパス。")
-    var path: String
+    var path: String?
 
     @Flag(name: .long, help: "カラー出力を無効にする。")
     var noColor = false
@@ -35,9 +35,23 @@ struct SwiftGuardCommand: AsyncParsableCommand {
     @Option(name: .long, help: "1ファイルあたりの最大監査文字数。")
     var maxChars: Int = 12_000
 
+    @Flag(name: .long, help: "監査する観点とチェックリストを表示して終了する（モデル不要）。")
+    var rules = false
+
     func run() async throws {
         let useColor = !noColor && Terminal.stdoutIsTTY
         let term = Terminal(useColor: useColor)
+
+        // 観点一覧の表示（モデル不要）。
+        if rules {
+            printRules(term: term)
+            return
+        }
+
+        // path はレビュー時のみ必須。
+        guard let path else {
+            throw ValidationError("監査対象のパスを指定してください（観点一覧は `swiftguard --rules`）。")
+        }
 
         // 1. モデル利用可否チェック
         switch AuditEngine.checkAvailability() {
@@ -137,6 +151,23 @@ struct SwiftGuardCommand: AsyncParsableCommand {
         term.print()
         term.print(term.rule("━"))
         term.print(term.paint("監査完了", .bold) + "  最も深刻なレベル: " + worst.badge)
+        term.print()
+    }
+
+    private func printRules(term: Terminal) {
+        term.print()
+        term.print(term.paint("🛡  SwiftGuard が監査する観点", .cyan, .bold))
+        term.print(term.rule())
+        for (index, category) in AuditPrompt.categories.enumerated() {
+            term.print()
+            term.print(term.paint("\(index + 1). \(category.emoji) \(category.title)", .bold))
+            for item in category.checklist {
+                term.print(term.paint("   • ", .gray) + item)
+            }
+        }
+        term.print()
+        term.print(term.rule())
+        term.print(term.paint("重大度: ", .bold) + "🔴 重大 / 🟡 警告 / 🟢 軽微")
         term.print()
     }
 

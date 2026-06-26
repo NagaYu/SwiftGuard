@@ -144,8 +144,7 @@ public struct AuditEngine: Sendable {
 
 
         上記コードのレビュー結果を踏まえ、ファイル全体の総合的なリスクレベルを判定してください。
-        重大な循環参照・データ競合・プライバシー規約違反など、修正なしにコミットすべきでない問題が\
-        1件でもあれば critical としてください。
+        \(AuditPrompt.riskCriteria)
         """
         let response = try await session.respond(
             to: prompt,
