@@ -19,7 +19,7 @@ APP_NAME="SwiftGuard"
 APP_EXECUTABLE="SwiftGuardApp"      # SPM の executable product 名
 CLI_EXECUTABLE="swiftguard"
 BUNDLE_ID="com.swiftguard.app"
-VERSION="0.1.0"
+VERSION="0.2.0"
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DIST="$ROOT/dist"

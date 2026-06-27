@@ -6,6 +6,8 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-27
+
 ### Added
 - 監査観点を構造化した `AuditCategory`。各観点に専門的なチェックリストを付与し、
   システム指示（プロンプト）を観点定義から自動生成するように変更（観点の追加が容易に）。
@@ -49,5 +51,6 @@
 - 🎨 アプリアイコン生成器（AppKit で描画 → `.icns`）
 - 📝 日英バイリンガル README、MIT ライセンス、CI ワークフロー
 
-[Unreleased]: https://github.com/NagaYu/SwiftGuard/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/NagaYu/SwiftGuard/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/NagaYu/SwiftGuard/releases/tag/v0.2.0
 [0.1.0]: https://github.com/NagaYu/SwiftGuard/releases/tag/v0.1.0

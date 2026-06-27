@@ -17,7 +17,7 @@ struct SwiftGuardCommand: AsyncParsableCommand {
         パフォーマンス・Apple プライバシー規約の 4 観点で監査します。
         コードは一切外部送信されず、すべて Mac 上で処理されます。
         """,
-        version: "0.1.0"
+        version: "0.2.0"
     )
 
     @Argument(help: "監査対象のファイルまたはディレクトリのパス。")
