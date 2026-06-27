@@ -44,14 +44,28 @@ if [ -z "$STAGED" ]; then
     exit 0
 fi
 
+# モデルが使えない環境ではコミットを止めない（fail-open）。
+if ! "$BIN" --check >/dev/null 2>&1; then
+    echo "⚠️  オンデバイスモデルを利用できないため SwiftGuard をスキップします（コミットは継続）。"
+    exit 0
+fi
+
 echo "🛡  SwiftGuard: ステージされた Swift ファイルを監査しています..."
 
+# 終了コード: 0=問題なし / 1=重大あり（ブロック） / それ以外=スキップ（ブロックしない）
 FAILED=0
 for FILE in $STAGED; do
     [ -f "$FILE" ] || continue
     # --strict: 重大な問題があれば終了コード1。--quiet: 判定のみ高速表示。
-    if ! "$BIN" --strict --quiet --no-color "$FILE"; then
-        FAILED=1
+    if "$BIN" --strict --quiet --no-color "$FILE"; then
+        : # 0 = 問題なし
+    else
+        STATUS=$?
+        if [ "$STATUS" -eq 1 ]; then
+            FAILED=1
+        else
+            echo "⚠️  $FILE: 監査をスキップしました（exit $STATUS）。"
+        fi
     fi
 done
 

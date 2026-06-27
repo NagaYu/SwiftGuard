@@ -31,6 +31,17 @@ public struct RiskAssessment: Equatable {
     public var criticalIssueCount: Int
 }
 
+extension RiskAssessment {
+    /// `criticalIssueCount` と `level` の不整合を是正した実効リスクレベル。
+    ///
+    /// オンデバイスモデルは「重大な問題を 1 件報告しつつ level を warning に付ける」など、
+    /// 件数とレベルが食い違う出力をすることがある。コミットをブロックする安全側の判断として、
+    /// 重大件数が 1 以上なら critical として扱う。
+    public var effectiveLevel: RiskLevel {
+        criticalIssueCount > 0 ? .critical : level
+    }
+}
+
 extension RiskLevel {
     /// 端末表示用のバッジ文字列。
     public var badge: String {

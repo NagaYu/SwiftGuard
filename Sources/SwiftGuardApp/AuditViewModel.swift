@@ -77,7 +77,7 @@ final class AuditViewModel {
                         self.append(delta)
                     }
                 } catch {
-                    self.append("\n> ⚠️ 監査エラー: \(error)\n")
+                    self.append("\n> ⚠️ \(AuditEngine.friendlyMessage(for: error))\n")
                 }
 
                 self.progress = Double(index + 1) / Double(files.count)

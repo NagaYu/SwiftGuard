@@ -38,6 +38,9 @@ struct SwiftGuardCommand: AsyncParsableCommand {
     @Flag(name: .long, help: "監査する観点とチェックリストを表示して終了する（モデル不要）。")
     var rules = false
 
+    @Flag(name: .long, help: "オンデバイスモデルの利用可否のみ確認して終了する（利用可=0 / 不可=2）。")
+    var check = false
+
     func run() async throws {
         let useColor = !noColor && Terminal.stdoutIsTTY
         let term = Terminal(useColor: useColor)
@@ -48,18 +51,21 @@ struct SwiftGuardCommand: AsyncParsableCommand {
             return
         }
 
-        // path はレビュー時のみ必須。
-        guard let path else {
-            throw ValidationError("監査対象のパスを指定してください（観点一覧は `swiftguard --rules`）。")
-        }
-
         // 1. モデル利用可否チェック
         switch AuditEngine.checkAvailability() {
         case .available:
-            break
+            if check {
+                term.print(term.paint("✓ オンデバイスモデルは利用可能です。", .green))
+                return
+            }
         case .unavailable(let reason):
             Terminal.errorLine(term.paint("✗ オンデバイスモデルを利用できません: ", .red, .bold) + reason)
             throw ExitCode(2)
+        }
+
+        // path はレビュー時のみ必須（--check では不要）。
+        guard let path else {
+            throw ValidationError("監査対象のパスを指定してください（観点一覧は `swiftguard --rules`）。")
         }
 
         // 2. 対象ファイル収集
@@ -72,8 +78,9 @@ struct SwiftGuardCommand: AsyncParsableCommand {
         }
 
         guard !files.isEmpty else {
+            // 対象なしはインフラ/使い方の問題として 2（フックを誤ってブロックしない）。
             Terminal.errorLine(term.paint("対象となる .swift ファイルが見つかりませんでした。", .yellow))
-            throw ExitCode(1)
+            throw ExitCode(2)
         }
 
         printBanner(term: term, fileCount: files.count)
@@ -105,10 +112,10 @@ struct SwiftGuardCommand: AsyncParsableCommand {
 
                 // 構造化リスク判定（バッジ表示・終了コード判定）。
                 let assessment = try await engine.assessRisk(fileName: display, source: source)
-                worstLevel = max(worstLevel, assessment.level)
+                worstLevel = max(worstLevel, assessment.effectiveLevel)
                 printVerdict(term: term, assessment: assessment)
             } catch {
-                Terminal.errorLine(term.paint("  監査中にエラー: \(error)", .red))
+                Terminal.errorLine(term.paint("  ⚠️ ", .yellow) + AuditEngine.friendlyMessage(for: error))
             }
         }
 
@@ -135,11 +142,12 @@ struct SwiftGuardCommand: AsyncParsableCommand {
     }
 
     private func printVerdict(term: Terminal, assessment: RiskAssessment) {
+        let level = assessment.effectiveLevel
         let badge: String
-        switch assessment.level {
-        case .safe: badge = term.paint(" \(assessment.level.badge) ", .green, .bold)
-        case .warning: badge = term.paint(" \(assessment.level.badge) ", .yellow, .bold)
-        case .critical: badge = term.paint(" \(assessment.level.badge) ", .red, .bold)
+        switch level {
+        case .safe: badge = term.paint(" \(level.badge) ", .green, .bold)
+        case .warning: badge = term.paint(" \(level.badge) ", .yellow, .bold)
+        case .critical: badge = term.paint(" \(level.badge) ", .red, .bold)
         }
         term.print(badge + "  " + assessment.summary)
         if assessment.criticalIssueCount > 0 {

@@ -146,11 +146,46 @@ public struct AuditEngine: Sendable {
         上記コードのレビュー結果を踏まえ、ファイル全体の総合的なリスクレベルを判定してください。
         \(AuditPrompt.riskCriteria)
         """
+        // 判定（特にコミットのブロック）が実行ごとにブレないよう、温度 0 で可能な限り決定的に生成する。
         let response = try await session.respond(
             to: prompt,
             generating: RiskAssessment.self,
-            options: GenerationOptions(temperature: options.temperature)
+            options: GenerationOptions(temperature: 0)
         )
         return response.content
+    }
+
+    // MARK: - エラーの日本語化
+
+    /// 監査中に発生したエラーを、利用者にとって分かりやすい日本語メッセージへ変換する。
+    public static func friendlyMessage(for error: Error) -> String {
+        if error is CancellationError {
+            return "監査をキャンセルしました。"
+        }
+        if let generation = error as? LanguageModelSession.GenerationError {
+            switch generation {
+            case .exceededContextWindowSize:
+                return "ファイルが大きすぎてモデルの処理上限を超えました。`--max-chars` を小さくするか、ファイルを分割してください。"
+            case .guardrailViolation:
+                return "セーフティガードレールにより監査がブロックされました。コードに不適切と判定され得る内容が含まれている可能性があります。"
+            case .assetsUnavailable:
+                return "モデルアセットを利用できません。Apple Intelligence のダウンロードが完了しているか確認してください。"
+            case .unsupportedLanguageOrLocale:
+                return "この言語 / ロケールはオンデバイスモデルに対応していません。"
+            case .unsupportedGuide:
+                return "構造化出力の定義がモデルに対応していません。"
+            case .decodingFailure:
+                return "モデル出力の解析に失敗しました。もう一度お試しください。"
+            case .rateLimited:
+                return "リクエストが集中しています。少し時間をおいて再試行してください。"
+            case .concurrentRequests:
+                return "複数の監査が同時に実行されています。1 件ずつ実行してください。"
+            case .refusal:
+                return "モデルが回答を拒否しました。"
+            @unknown default:
+                return "監査中にエラーが発生しました: \(generation.localizedDescription)"
+            }
+        }
+        return "監査中にエラーが発生しました: \(error.localizedDescription)"
     }
 }
