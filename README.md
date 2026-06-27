@@ -22,7 +22,7 @@ Powered by Apple's on-device LLM — [FoundationModels](https://developer.apple.
 
 **SwiftGuard** は、あなたの Swift コードを **一切外部に送信せず**、Mac 上の Apple オンデバイス LLM だけで監査するセキュリティ／品質チェックツールです。
 
-「iOS / macOS のシニアエンジニア兼セキュリティ監査の専門家」としての視点で、以下の 4 観点を **日本語** でレビューし、結果をストリーミング表示します。
+「iOS / macOS のシニアエンジニア兼セキュリティ監査の専門家」としての視点で、以下の観点を **日本語** でレビューし、結果をストリーミング表示します（観点一覧は `swiftguard --rules` でも確認できます）。
 
 | 観点 | 検出する内容の例 |
 |------|------------------|
@@ -30,6 +30,8 @@ Powered by Apple's on-device LLM — [FoundationModels](https://developer.apple.
 | 🧵 **スレッド安全性 / 並行性** | データ競合、`@MainActor` 違反、UI のメインスレッド外更新、非 `Sendable` 越境 |
 | ⚡️ **パフォーマンス** | 不要なコピー、メインスレッドのブロッキング I/O、O(n²) ループ、過剰なオブジェクト生成 |
 | 🔐 **プライバシー規約違反** | 許可なしの位置情報／連絡先／写真アクセス、機微情報のログ出力・平文保存・外部送信 |
+| 💥 **強制アンラップ / クラッシュ耐性** | `!` の強制アンラップ、`try!` / `as!`、配列の範囲外アクセス、`fatalError` の本番発火 |
+| 🧯 **エラーハンドリング** | `try?` での握りつぶし、空の `catch {}`、エラーの黙殺・未伝播 |
 
 **CLI（コマンドライン）** と **デスクトップアプリ（SwiftUI）** の両方を提供します。
 
@@ -108,6 +110,9 @@ swiftguard --strict ./Sources
 
 # 監査する観点とチェックリストを表示（モデル不要）
 swiftguard --rules
+
+# 結果を Markdown ファイルに保存（パイプ時はカラーなしのプレーン出力）
+swiftguard ./Sources > report.md
 ```
 
 | オプション | 説明 |
@@ -123,7 +128,7 @@ swiftguard --rules
 ### デスクトップアプリ
 
 - **左ペイン**: `.swift` ファイルやフォルダをドラッグ＆ドロップ（またはボタンで選択）
-- **右ペイン**: 監査結果が Markdown で見やすくストリーミング表示
+- **右ペイン**: 監査結果が Markdown で見やすくストリーミング表示。**コピー** / **Markdown を保存** ボタン付き
 - **下部**: ステータスと進捗バー
 
 ---
@@ -225,12 +230,14 @@ Issue / PR を歓迎します。観点（プロンプト）の追加・改善、
 
 **SwiftGuard** audits your Swift code for safety and quality **entirely on-device**, using Apple's FoundationModels LLM. **Your source code never leaves your Mac** — no external APIs, no telemetry.
 
-Acting as a *"senior iOS/macOS engineer & security auditor"*, it reviews four dimensions and streams the results:
+Acting as a *"senior iOS/macOS engineer & security auditor"*, it reviews these dimensions and streams the results (run `swiftguard --rules` to list them):
 
 - 🔁 **Retain cycles / memory leaks**
 - 🧵 **Thread-safety & concurrency** (data races, `@MainActor` violations, off-main UI updates)
 - ⚡️ **Performance waste** (blocking I/O, O(n²) loops, needless copies)
 - 🔐 **Apple privacy-policy risks** (unauthorized location/contacts/photo access, leaking sensitive data)
+- 💥 **Crash resilience** (force unwraps `!`, `try!` / `as!`, out-of-range access)
+- 🧯 **Error handling** (swallowed errors, empty `catch {}`, ignored failures)
 
 It ships as both a **CLI** and a **SwiftUI desktop app**, plus a **Git pre-commit hook** that blocks commits containing critical issues. The AI logic lives in a shared `SwiftGuardCore` module reused by both front-ends.
 

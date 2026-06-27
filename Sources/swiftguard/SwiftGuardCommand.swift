@@ -33,7 +33,7 @@ struct SwiftGuardCommand: AsyncParsableCommand {
     var quiet = false
 
     @Option(name: .long, help: "1ファイルあたりの最大監査文字数。")
-    var maxChars: Int = 12_000
+    var maxChars: Int = 8_000
 
     @Flag(name: .long, help: "監査する観点とチェックリストを表示して終了する（モデル不要）。")
     var rules = false

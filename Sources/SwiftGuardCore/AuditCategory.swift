@@ -81,8 +81,36 @@ extension AuditCategory {
         ]
     )
 
+    /// 💥 強制アンラップ / クラッシュ耐性
+    public static let crashSafety = AuditCategory(
+        id: "crash",
+        emoji: "💥",
+        title: "強制アンラップ / クラッシュ耐性",
+        checklist: [
+            "強制アンラップ `!` が nil で実行時クラッシュし得る箇所",
+            "`try!` / `as!` によるクラッシュのリスク（安全な `try?` / `as?` で代替可能か）",
+            "配列・文字列の範囲外アクセス（`array[i]` の境界チェック欠如）",
+            "`fatalError` / `preconditionFailure` が本番経路で発火し得る設計",
+            "暗黙的アンラップ Optional（`var x: T!`）の不用意な使用",
+        ]
+    )
+
+    /// 🧯 エラーハンドリング
+    public static let errorHandling = AuditCategory(
+        id: "error",
+        emoji: "🧯",
+        title: "エラーハンドリング",
+        checklist: [
+            "`try?` でエラーを握りつぶし、失敗が無視されている",
+            "空の `catch {}` など、エラーを無視するハンドリング",
+            "エラーをログのみで黙殺し、呼び出し側へ伝播していない",
+            "`throws` / `Result` で表現すべき失敗を `nil` や真偽値で潰している",
+            "ユーザーに通知すべきエラーが UI に反映されない",
+        ]
+    )
+
     /// 監査に使用する観点の一覧（順序は出力順）。
     public static let all: [AuditCategory] = [
-        memorySafety, concurrency, performance, privacy,
+        memorySafety, concurrency, performance, privacy, crashSafety, errorHandling,
     ]
 }

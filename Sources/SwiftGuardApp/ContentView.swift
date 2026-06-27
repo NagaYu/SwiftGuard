@@ -88,6 +88,38 @@ struct ContentView: View {
     // MARK: - 右ペイン（結果）
 
     private var resultPane: some View {
+        VStack(spacing: 0) {
+            resultToolbar
+            Divider()
+            resultScroll
+        }
+    }
+
+    private var resultToolbar: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "doc.text.magnifyingglass")
+                .foregroundStyle(.secondary)
+            Text("監査結果")
+                .font(.headline)
+            Spacer()
+            Button {
+                copyReport()
+            } label: {
+                Label("コピー", systemImage: "doc.on.doc")
+            }
+            Button {
+                saveReport()
+            } label: {
+                Label("Markdown を保存", systemImage: "square.and.arrow.down")
+            }
+        }
+        .controlSize(.small)
+        .disabled(model.reportMarkdown.isEmpty)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+    }
+
+    private var resultScroll: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 Group {
@@ -170,6 +202,21 @@ struct ContentView: View {
         panel.prompt = "監査"
         if panel.runModal() == .OK {
             model.audit(paths: panel.urls.map(\.path))
+        }
+    }
+
+    private func copyReport() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(model.reportMarkdown, forType: .string)
+    }
+
+    private func saveReport() {
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [UTType("net.daringfireball.markdown") ?? .plainText]
+        panel.nameFieldStringValue = "SwiftGuard-Report.md"
+        panel.canCreateDirectories = true
+        if panel.runModal() == .OK, let url = panel.url {
+            try? model.reportMarkdown.write(to: url, atomically: true, encoding: .utf8)
         }
     }
 }

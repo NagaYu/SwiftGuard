@@ -19,10 +19,16 @@ struct AuditPromptTests {
         #expect(text.contains("日本語"))
     }
 
-    @Test("既定では4観点（循環参照・並行性・性能・プライバシー）")
-    func hasFourDefaultCategories() {
+    @Test("既定の観点一覧（順序固定）")
+    func defaultCategories() {
         let ids = AuditCategory.all.map(\.id)
-        #expect(ids == ["memory", "concurrency", "performance", "privacy"])
+        #expect(ids == ["memory", "concurrency", "performance", "privacy", "crash", "error"])
+    }
+
+    @Test("観点の id は一意")
+    func categoryIDsAreUnique() {
+        let ids = AuditCategory.all.map(\.id)
+        #expect(Set(ids).count == ids.count)
     }
 
     @Test("短いソースは切り詰められない")

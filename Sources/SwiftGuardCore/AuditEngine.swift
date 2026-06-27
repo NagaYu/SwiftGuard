@@ -20,7 +20,7 @@ public struct AuditEngine: Sendable {
         /// 生成温度（0に近いほど決定的で監査向き）。
         public var temperature: Double
 
-        public init(maxCharactersPerFile: Int = 12_000, temperature: Double = 0.2) {
+        public init(maxCharactersPerFile: Int = 8_000, temperature: Double = 0.2) {
             self.maxCharactersPerFile = maxCharactersPerFile
             self.temperature = temperature
         }

@@ -83,7 +83,7 @@ public enum AuditPrompt {
     public static func reviewPrompt(
         fileName: String,
         source: String,
-        maxCharacters: Int = 12_000
+        maxCharacters: Int = 8_000
     ) -> (prompt: String, truncated: Bool) {
         let truncated = source.count > maxCharacters
         let body = truncated ? String(source.prefix(maxCharacters)) : source
