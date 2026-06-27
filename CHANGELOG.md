@@ -7,6 +7,9 @@
 ## [Unreleased]
 
 ### Added
+- **Homebrew tap** ([NagaYu/homebrew-tap](https://github.com/NagaYu/homebrew-tap)) を公開。
+  `brew install NagaYu/tap/swiftguard` で CLI を Gatekeeper 警告なし・無料・証明書不要で導入可能。
+  アプリ用 cask も提供。
 - `build.sh` に Developer ID 署名・公証 (notarization) のサポートを追加。
   `SIGN_IDENTITY` / `NOTARY_PROFILE` 環境変数を設定すると署名＆公証し、未設定なら従来どおり
   ad-hoc 署名でビルドする。リリースワークフローからも Secrets 経由で利用可能。
