@@ -1,0 +1,39 @@
+name: Release
+
+# `v*` タグを push すると、配布アセットを自動ビルドして GitHub Release を作成する。
+#   git tag v0.2.0 && git push origin v0.2.0
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write   # リリース作成・アセットアップロードに必要
+
+jobs:
+  build-and-release:
+    # FoundationModels は macOS 26 (Tahoe) SDK / Xcode 26 が必要。
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode 26
+        run: sudo xcode-select -s /Applications/Xcode_26.app || true
+
+      - name: Build artifacts (.app / .dmg / CLI)
+        run: ./scripts/build.sh all
+
+      - name: Package CLI
+        run: |
+          cd dist
+          zip -j "swiftguard-cli-${GITHUB_REF_NAME#v}-macos-universal.zip" swiftguard
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "${GITHUB_REF_NAME}" \
+            --generate-notes \
+            dist/*.dmg \
+            dist/*.zip
