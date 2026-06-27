@@ -35,7 +35,27 @@ fi
 
 ARCH_FLAGS="--arch arm64 --arch x86_64"   # ユニバーサルバイナリ
 
+# 署名・公証（任意）。設定されていれば Developer ID で署名し、未設定なら ad-hoc 署名。
+#   SIGN_IDENTITY  例: "Developer ID Application: Your Name (TEAMID)"
+#   NOTARY_PROFILE notarytool に保存済みのプロファイル名
+#     （事前に: xcrun notarytool store-credentials <PROFILE> --apple-id ... --team-id ... --password <app専用パスワード>）
+SIGN_IDENTITY="${SIGN_IDENTITY:-}"
+NOTARY_PROFILE="${NOTARY_PROFILE:-}"
+
 log() { printf "\033[36m▶ %s\033[0m\n" "$1"; }
+
+# コード署名（.app / .dmg 共通）。Developer ID があれば hardened runtime 付きで署名。
+codesign_target() {
+    local target="$1"
+    if [ -n "$SIGN_IDENTITY" ]; then
+        log "Developer ID で署名中: $SIGN_IDENTITY"
+        codesign --force --deep --options runtime --timestamp \
+            --sign "$SIGN_IDENTITY" "$target"
+    else
+        codesign --force --deep --sign - "$target" 2>/dev/null \
+            || log "（警告）ad-hoc 署名に失敗しました。未署名のまま続行します。"
+    fi
+}
 
 # ── CLI ───────────────────────────────────────────────
 build_cli() {
@@ -91,9 +111,11 @@ PLIST
         /usr/libexec/PlistBuddy -c "Add :CFBundleIconFile string AppIcon" "$app/Contents/Info.plist" 2>/dev/null || true
     fi
 
-    # アドホック署名（Gatekeeper の起動を通しやすくする。配布時は Developer ID 署名を推奨）。
-    codesign --force --deep --sign - "$app" 2>/dev/null || \
-        log "（警告）codesign に失敗しました。未署名のまま続行します。"
+    # 署名（Developer ID があればそれを、無ければ ad-hoc）。
+    codesign_target "$app"
+    if [ -z "$SIGN_IDENTITY" ]; then
+        log "（情報）SIGN_IDENTITY 未設定のため ad-hoc 署名です（一般配布には Developer ID 署名を推奨）。"
+    fi
 
     log ".app 出力: dist/$APP_NAME.app"
 }
@@ -117,6 +139,22 @@ build_dmg() {
         "$dmg" >/dev/null
 
     rm -rf "$staging"
+
+    # DMG 自体にも署名（Developer ID がある場合）。
+    if [ -n "$SIGN_IDENTITY" ]; then
+        codesign --force --timestamp --sign "$SIGN_IDENTITY" "$dmg"
+    fi
+
+    # 公証＆ステープル（NOTARY_PROFILE がある場合のみ）。
+    if [ -n "$NOTARY_PROFILE" ]; then
+        log "公証を申請中（数分かかる場合があります）..."
+        xcrun notarytool submit "$dmg" --keychain-profile "$NOTARY_PROFILE" --wait
+        xcrun stapler staple "$dmg"
+        log "公証＆ステープル完了。"
+    elif [ -n "$SIGN_IDENTITY" ]; then
+        log "（情報）NOTARY_PROFILE 未設定のため公証はスキップしました（署名のみ）。"
+    fi
+
     log ".dmg 出力: $dmg"
 }
 

@@ -21,6 +21,12 @@ jobs:
         run: sudo xcode-select -s /Applications/Xcode_26.app || true
 
       - name: Build artifacts (.app / .dmg / CLI)
+        # Developer ID 署名・公証を使う場合は、リポジトリ Secrets に
+        # SIGN_IDENTITY / NOTARY_PROFILE 等を設定して下記へ env で渡す。
+        # 未設定なら ad-hoc 署名でビルドされる。
+        env:
+          SIGN_IDENTITY: ${{ secrets.SIGN_IDENTITY }}
+          NOTARY_PROFILE: ${{ secrets.NOTARY_PROFILE }}
         run: ./scripts/build.sh all
 
       - name: Package CLI

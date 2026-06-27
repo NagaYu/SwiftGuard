@@ -6,6 +6,11 @@
 
 ## [Unreleased]
 
+### Added
+- `build.sh` に Developer ID 署名・公証 (notarization) のサポートを追加。
+  `SIGN_IDENTITY` / `NOTARY_PROFILE` 環境変数を設定すると署名＆公証し、未設定なら従来どおり
+  ad-hoc 署名でビルドする。リリースワークフローからも Secrets 経由で利用可能。
+
 ## [0.2.0] - 2026-06-27
 
 ### Added

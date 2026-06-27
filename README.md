@@ -173,7 +173,29 @@ git commit --no-verify             # 1 回だけ回避
 
 成果物は `dist/` に出力されます（ユニバーサルバイナリ: arm64 + x86_64）。
 
-> 一般配布する場合は、Gatekeeper のため Apple Developer ID による署名・公証 (notarization) を推奨します。
+### 署名・公証（任意 / 一般配布向け）
+
+何も設定しなければ **ad-hoc 署名**でビルドされます（手元での利用やテストはこれで十分）。
+Gatekeeper の警告なく広く配布したい場合は、Apple Developer ID で**署名・公証**できます。
+
+```bash
+# Developer ID で署名（hardened runtime 付き）
+SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" \
+  ./scripts/build.sh dmg
+
+# 署名 + 公証 (notarization) + ステープルまで一括
+# 事前に notarytool の認証情報を保存しておく:
+#   xcrun notarytool store-credentials swiftguard-notary \
+#     --apple-id "you@example.com" --team-id TEAMID --password <app専用パスワード>
+SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" \
+NOTARY_PROFILE="swiftguard-notary" \
+  ./scripts/build.sh dmg
+```
+
+| 環境変数 | 説明 |
+|---------|------|
+| `SIGN_IDENTITY` | Developer ID 署名の Identity（未設定なら ad-hoc 署名） |
+| `NOTARY_PROFILE` | `notarytool` に保存済みのプロファイル名（設定時のみ公証＆ステープル） |
 
 ---
 
