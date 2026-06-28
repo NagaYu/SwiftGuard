@@ -6,6 +6,10 @@
 
 ## [Unreleased]
 
+### Changed
+- ドキュメントを英語主体に変更。`README.md` を英語版（主）、`README.ja.md` を日本語版とし、
+  相互リンクを追加。`CONTRIBUTING.md` も英語主体に。
+
 ### Added
 - **Homebrew tap** ([NagaYu/homebrew-tap](https://github.com/NagaYu/homebrew-tap)) を公開。
   `brew install NagaYu/tap/swiftguard` で CLI を Gatekeeper 警告なし・無料・証明書不要で導入可能。

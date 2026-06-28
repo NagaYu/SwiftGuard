@@ -1,41 +1,43 @@
-# Contributing to SwiftGuard / コントリビュートガイド
+# Contributing to SwiftGuard
 
-SwiftGuard への貢献を歓迎します！ / Contributions are very welcome!
+Contributions are very welcome! / コントリビュートを歓迎します！
 
-## 🇯🇵 はじめに
+## 🇺🇸 Getting started
 
-1. **Issue を立てる** — バグ報告・機能提案はまず Issue へ。
-2. **フォーク & ブランチ** — `feature/xxx` や `fix/xxx` のブランチを切ってください。
-3. **ビルド & テスト** — PR 前に必ず以下が通ることを確認してください。
+1. **Open an issue first** — for bug reports and feature proposals.
+2. **Fork & branch** — branch off `main` (e.g. `feature/xxx` or `fix/xxx`).
+3. **Build & test** — make sure the following pass before opening a PR:
 
 ```bash
 swift build
 swift test
-# Command Line Tools のみの環境では Xcode ツールチェーンを指定:
+# If only the Command Line Tools are active, point at the Xcode toolchain:
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift build
 ```
 
-4. **pre-commit フックの導入を推奨** — `./scripts/install-hooks.sh`
+4. **Install the pre-commit hook (recommended)** — `./scripts/install-hooks.sh`
 
-### 貢献しやすい領域
+### Good areas to contribute
 
-- 🔍 **監査観点（プロンプト）の改善** — `Sources/SwiftGuardCore/AuditPrompt.swift`
-- 🌐 **多言語対応** — レビュー出力言語の切り替え
-- 🎨 **GUI / 出力フォーマットの改善**
-- 🧪 **テストの追加** — `Tests/SwiftGuardCoreTests/`
+- 🔍 **Audit dimensions (prompts)** — `Sources/SwiftGuardCore/AuditCategory.swift`
+  (append one entry to `AuditCategory.all` and it flows into the CLI, GUI, and hook)
+- 🌐 **Localization** — switching the review output language
+- 🎨 **GUI / output formatting** improvements
+- 🧪 **Tests** — `Tests/SwiftGuardCoreTests/`
 
-### コーディング規約
+### Coding guidelines
 
-- 既存ファイルのスタイル（命名・コメント密度）に合わせてください。
-- 公開 API には日本語のドキュメントコメントを付けてください。
-- コアロジックは `SwiftGuardCore` に置き、CLI / GUI から共有してください。
-
-## 🇺🇸 In short
-
-Open an issue first, branch off `main`, make sure `swift build` and `swift test`
-pass (use `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` if only the
-Command Line Tools are active), then open a PR. Keep shared logic in
-`SwiftGuardCore`. Thank you! 🙏
+- Match the style (naming, comment density) of the surrounding code.
+- Document public APIs.
+- Keep shared logic in `SwiftGuardCore` so the CLI and GUI both reuse it.
 
 By contributing, you agree that your contributions are licensed under the
 project's [MIT License](LICENSE).
+
+## 🇯🇵 はじめに（日本語）
+
+まず Issue を立て、`main` からブランチを切り、`swift build` と `swift test` が通ることを
+確認してから PR を送ってください（Command Line Tools のみの環境では
+`DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` を付与）。
+共通ロジックは `SwiftGuardCore` に置いてください。観点（プロンプト）の追加・改善、
+出力フォーマットの改善、多言語対応などのアイデアを歓迎します。ありがとうございます！🙏

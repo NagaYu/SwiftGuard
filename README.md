@@ -2,7 +2,6 @@
 
 # 🛡 SwiftGuard
 
-**完全ローカルで動く、Swift コード安全監査ツール**
 **A fully on-device security & quality auditor for Swift code**
 
 Powered by Apple's on-device LLM — [FoundationModels](https://developer.apple.com/documentation/foundationmodels)
@@ -10,228 +9,226 @@ Powered by Apple's on-device LLM — [FoundationModels](https://developer.apple.
 [![Platform](https://img.shields.io/badge/platform-macOS%2026%2B-blue.svg)](https://www.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/Swift-6.0%2B-orange.svg)](https://swift.org)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Privacy](https://img.shields.io/badge/privacy-100%25%20on--device-brightgreen.svg)](#-プライバシー--privacy)
+[![Privacy](https://img.shields.io/badge/privacy-100%25%20on--device-brightgreen.svg)](#-privacy)
 
-[日本語](#-概要) ・ [English](#-overview)
+**English** ・ [日本語](README.ja.md)
 
 </div>
 
 ---
 
-## 🇯🇵 概要
+## 📖 Overview
 
-**SwiftGuard** は、あなたの Swift コードを **一切外部に送信せず**、Mac 上の Apple オンデバイス LLM だけで監査するセキュリティ／品質チェックツールです。
+**SwiftGuard** audits your Swift code for safety and quality **entirely on-device**, using Apple's FoundationModels LLM. **Your source code never leaves your Mac** — no external APIs, no telemetry.
 
-「iOS / macOS のシニアエンジニア兼セキュリティ監査の専門家」としての視点で、以下の観点を **日本語** でレビューし、結果をストリーミング表示します（観点一覧は `swiftguard --rules` でも確認できます）。
+Acting as a *"senior iOS/macOS engineer & security auditor"*, it reviews the following dimensions and streams the results (run `swiftguard --rules` to list them):
 
-| 観点 | 検出する内容の例 |
-|------|------------------|
-| 🔁 **循環参照 / メモリリーク** | クロージャの `self` 強参照、`delegate` の `weak` 漏れ、`Timer` / `Task` の retain cycle |
-| 🧵 **スレッド安全性 / 並行性** | データ競合、`@MainActor` 違反、UI のメインスレッド外更新、非 `Sendable` 越境 |
-| ⚡️ **パフォーマンス** | 不要なコピー、メインスレッドのブロッキング I/O、O(n²) ループ、過剰なオブジェクト生成 |
-| 🔐 **プライバシー規約違反** | 許可なしの位置情報／連絡先／写真アクセス、機微情報のログ出力・平文保存・外部送信 |
-| 💥 **強制アンラップ / クラッシュ耐性** | `!` の強制アンラップ、`try!` / `as!`、配列の範囲外アクセス、`fatalError` の本番発火 |
-| 🧯 **エラーハンドリング** | `try?` での握りつぶし、空の `catch {}`、エラーの黙殺・未伝播 |
+| Dimension | Examples of what it catches |
+|-----------|------------------------------|
+| 🔁 **Retain cycles / memory leaks** | Strong `self` capture in closures, missing `weak` delegates, `Timer` / `Task` retain cycles |
+| 🧵 **Thread-safety & concurrency** | Data races, `@MainActor` violations, off-main UI updates, non-`Sendable` crossings |
+| ⚡️ **Performance** | Needless copies, blocking I/O on the main thread, O(n²) loops, excessive allocations |
+| 🔐 **Apple privacy-policy risks** | Unauthorized location/contacts/photo access, logging or storing sensitive data in plaintext |
+| 💥 **Crash resilience** | Force unwraps `!`, `try!` / `as!`, out-of-range access, `fatalError` in production paths |
+| 🧯 **Error handling** | Swallowed errors via `try?`, empty `catch {}`, ignored / un-propagated failures |
 
-**CLI（コマンドライン）** と **デスクトップアプリ（SwiftUI）** の両方を提供します。
+It ships as both a **CLI** and a **SwiftUI desktop app**, plus a **Git pre-commit hook** that blocks commits containing critical issues.
 
-### ✨ 特長
+### ✨ Highlights
 
-- **完全ローカル / プライバシー保護** — コードは Mac の外に出ません（後述）。
-- **2 つのインターフェース** — ターミナル派にも GUI 派にも。
-- **Git pre-commit フック** — 危険なコードのコミットを自動でブロック。
-- **共通コアモジュール** — AI ロジックは `SwiftGuardCore` に集約され、CLI / GUI で共有。
-- **オープンソース (MIT)** — 個人・商用問わず無料。
+- **100% local / privacy-preserving** — your code never leaves the Mac (see below).
+- **Two interfaces** — a terminal CLI and a native desktop app.
+- **Git pre-commit hook** — automatically blocks commits with dangerous code.
+- **Shared core module** — the AI logic lives in `SwiftGuardCore`, reused by both front-ends.
+- **Open source (MIT)** — free for personal and commercial use.
 
----
-
-## 🔐 プライバシー / Privacy
-
-SwiftGuard は Apple の **FoundationModels** フレームワークを使用し、推論はすべて **オンデバイス** で実行されます。
-
-- ソースコードは **インターネットに送信されません**。OpenAI 等の外部 API も一切使いません。
-- 端末で処理しきれない場合でも、Apple の **Private Cloud Compute (PCC)** により、Apple ですら内容を読めない暗号化された状態で処理されます（Apple のサーバーにデータは保持されません）。
-- ネットワークを切断した状態でも、対応モデルがあれば動作します。
-
-> つまり、**社外秘・公開前のコードでも安心して監査できます。**
+> **Note:** review output is in Japanese by default. To change the language, edit `AuditPrompt.systemInstructions` in `Sources/SwiftGuardCore/AuditPrompt.swift`.
 
 ---
 
-## 📦 動作要件 / Requirements
+## 🔐 Privacy
 
-- **macOS 26 (Tahoe) 以降**
-- **Apple Intelligence に対応した Mac**（Apple シリコン）で、**Apple Intelligence が有効**
-  （ `設定 > Apple Intelligence & Siri` から有効化）
-- ビルドには **Xcode 26 以降**（FoundationModels のマクロを使用するため）
+SwiftGuard uses Apple's **FoundationModels** framework and runs all inference **on-device**.
+
+- Your source code is **never sent over the internet** — no OpenAI or other external APIs.
+- When a request can't be handled locally, Apple's **Private Cloud Compute (PCC)** processes it in an encrypted form that not even Apple can read, and no data is retained on Apple's servers.
+- It works even with networking disabled, as long as a supported model is available.
+
+> In short, **you can safely audit confidential or pre-release code.**
 
 ---
 
-## 🚀 インストール / Installation
+## 📦 Requirements
 
-### A. Homebrew（おすすめ・最も簡単）
+- **macOS 26 (Tahoe) or later**
+- An **Apple-Intelligence-capable Mac** (Apple silicon) with **Apple Intelligence enabled**
+  (turn it on under *System Settings → Apple Intelligence & Siri*)
+- **Xcode 26 or later** to build (FoundationModels relies on its macros)
 
-証明書なしでも警告なくインストールできます。
+---
+
+## 🚀 Installation
+
+### A. Homebrew (recommended — easiest)
+
+Installs with **no certificate and no Gatekeeper warning**.
 
 ```bash
-# CLI（Gatekeeper 警告なしで導入されます）
+# CLI (installed with no Gatekeeper warning)
 brew install NagaYu/tap/swiftguard
 
-# デスクトップアプリ
+# Desktop app
 brew install --cask --no-quarantine NagaYu/tap/swiftguard
 ```
 
-詳細: [NagaYu/homebrew-tap](https://github.com/NagaYu/homebrew-tap)
+Details: [NagaYu/homebrew-tap](https://github.com/NagaYu/homebrew-tap)
 
-### B. デスクトップアプリ（DMG を手動）
+### B. Desktop app (manual DMG)
 
-1. [Releases](https://github.com/NagaYu/SwiftGuard/releases) から `SwiftGuard-x.y.z.dmg` をダウンロード
-2. DMG を開き、`SwiftGuard.app` を `Applications` へドラッグ
-3. 初回は `SwiftGuard.app` を**右クリック →「開く」**（未署名アプリのため）
-4. フォルダ／ファイルをドラッグ＆ドロップ
+1. Download `SwiftGuard-x.y.z.dmg` from [Releases](https://github.com/NagaYu/SwiftGuard/releases).
+2. Open the DMG and drag `SwiftGuard.app` into `Applications`.
+3. On first launch, **right-click `SwiftGuard.app` → Open** (the app is unsigned).
+4. Drag a folder or file onto the window.
 
-> 自分でビルドする場合は [配布ビルド](#-配布ビルド--building-for-distribution) を参照。
+> Building it yourself? See [Building for Distribution](#-building-for-distribution).
 
-### C. CLI（ソースからビルド）
+### C. CLI (from source)
 
 ```bash
 git clone https://github.com/NagaYu/SwiftGuard.git
 cd SwiftGuard
 
-# リリースビルド
+# Release build
 swift build -c release
 
-# 任意: PATH に通す
+# Optional: put it on your PATH
 cp .build/release/swiftguard /usr/local/bin/
 ```
 
 ---
 
-## 🖥 使い方 / Usage
+## 🖥 Usage
 
 ### CLI
 
 ```bash
-# 単一ファイルを監査
+# Audit a single file
 swiftguard path/to/File.swift
 
-# ディレクトリを再帰的に監査
+# Recursively audit a directory
 swiftguard ./Sources
 
-# 判定だけを高速表示（レビュー本文を省略）
+# Fast verdict only (skip the Markdown review body)
 swiftguard --quiet ./Sources
 
-# CI / フック用: 重大な問題があれば終了コード 1
+# For CI / hooks: exit code 1 if any critical issue is found
 swiftguard --strict ./Sources
 
-# 監査する観点とチェックリストを表示（モデル不要）
+# Print the audited dimensions and checklists (no model required)
 swiftguard --rules
 
-# 結果を Markdown ファイルに保存（パイプ時はカラーなしのプレーン出力）
+# Save the report to a Markdown file (plain, no color, when piped)
 swiftguard ./Sources > report.md
 
-# オンデバイスモデルの利用可否だけ確認（CI / フックの事前判定用）
+# Only check whether the on-device model is available (for CI / hooks)
 swiftguard --check
 ```
 
-| オプション | 説明 |
-|-----------|------|
-| `--rules` | 監査する観点とチェックリストを表示して終了（モデル不要） |
-| `--check` | オンデバイスモデルの利用可否のみ確認して終了（利用可=`0` / 不可=`2`） |
-| `--quiet` | Markdown レビューを省き、リスク判定バッジのみ表示（高速） |
-| `--strict` | 🔴 CRITICAL が 1 件でもあれば exit code `1` |
-| `--no-color` | カラー出力を無効化 |
-| `--max-chars <n>` | 1 ファイルあたりの最大監査文字数（既定 8000） |
+| Option | Description |
+|--------|-------------|
+| `--rules` | Print the audited dimensions and checklists, then exit (no model required) |
+| `--check` | Check on-device model availability only, then exit (available=`0` / unavailable=`2`) |
+| `--quiet` | Skip the Markdown review and show only the risk-level badge (fast) |
+| `--strict` | Exit code `1` if any 🔴 CRITICAL issue is found |
+| `--no-color` | Disable colored output |
+| `--max-chars <n>` | Max characters audited per file (default 8000) |
 
-**終了コード:** `0` = 重大な問題なし / `1` = 重大な問題あり (`--strict`) / `2` = モデル利用不可・パスエラー・対象ファイルなし
+**Exit codes:** `0` = no critical issues / `1` = critical issue found (`--strict`) / `2` = model unavailable, path error, or no target files
 
-### デスクトップアプリ
+### Desktop app
 
-- **左ペイン**: `.swift` ファイルやフォルダをドラッグ＆ドロップ（またはボタンで選択）
-- **右ペイン**: 監査結果が Markdown で見やすくストリーミング表示。**コピー** / **Markdown を保存** ボタン付き
-- **下部**: ステータスと進捗バー
+- **Left pane**: drag & drop `.swift` files or folders (or pick them with a button)
+- **Right pane**: streamed, nicely rendered Markdown results — with **Copy** / **Save as Markdown** buttons
+- **Bottom**: status text and a progress bar
 
 ---
 
-## 🪝 Git pre-commit フック
+## 🪝 Git pre-commit hook
 
-危険なコードのコミットを自動でブロックできます。
+Automatically block commits that contain dangerous code.
 
 ```bash
-# リポジトリ直下で実行（.git/hooks/pre-commit を設置）
+# Run at the repo root (installs .git/hooks/pre-commit)
 ./scripts/install-hooks.sh
 ```
 
-以後 `git commit` のたびに、ステージされた `.swift` が監査され、
-🔴 CRITICAL が見つかるとコミットが中止されます。
+From then on, every `git commit` audits the staged `.swift` files and aborts the commit if a 🔴 CRITICAL issue is found.
 
 ```bash
-SWIFTGUARD_SKIP=1 git commit ...   # 一時的に無効化
-git commit --no-verify             # 1 回だけ回避
+SWIFTGUARD_SKIP=1 git commit ...   # temporarily disable
+git commit --no-verify             # skip once
 ```
 
-> **挙動メモ**: オンデバイスモデルを利用できない環境では、フックはコミットを止めません（fail-open）。
-> また、ブロック判定（構造化リスク評価）は温度 0 で生成し、重大な問題が 1 件でもあれば安全側に
-> 倒して 🔴 CRITICAL とみなすため、同じコードに対して安定した結果になります。
+> **Behavior notes:** when the on-device model is unavailable, the hook does **not** block the commit (fail-open). The blocking verdict (structured risk assessment) is generated at temperature 0 and treated as 🔴 CRITICAL whenever at least one critical issue is reported, so results are stable across runs for the same code.
 
 ---
 
-## 📀 配布ビルド / Building for Distribution
+## 📀 Building for Distribution
 
-`.app` と `.dmg` をコマンド一発で生成します。
+Produce `.app` and `.dmg` with a single command.
 
 ```bash
-./scripts/build.sh         # CLI + .app + .dmg をまとめてビルド
-./scripts/build.sh app     # .app のみ
+./scripts/build.sh         # CLI + .app + .dmg
+./scripts/build.sh app     # .app only
 ./scripts/build.sh dmg     # .app + .dmg
-./scripts/build.sh cli     # CLI のみ
+./scripts/build.sh cli     # CLI only
 ```
 
-成果物は `dist/` に出力されます（ユニバーサルバイナリ: arm64 + x86_64）。
+Artifacts are written to `dist/` (universal binary: arm64 + x86_64).
 
-### 署名・公証（任意 / 一般配布向け）
+### Signing & notarization (optional, for wide distribution)
 
-何も設定しなければ **ad-hoc 署名**でビルドされます（手元での利用やテストはこれで十分）。
-Gatekeeper の警告なく広く配布したい場合は、Apple Developer ID で**署名・公証**できます。
+With nothing configured, builds are **ad-hoc signed** (fine for local use and testing). To distribute without a Gatekeeper warning, sign and notarize with an Apple Developer ID.
 
 ```bash
-# Developer ID で署名（hardened runtime 付き）
+# Sign with a Developer ID (hardened runtime)
 SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" \
   ./scripts/build.sh dmg
 
-# 署名 + 公証 (notarization) + ステープルまで一括
-# 事前に notarytool の認証情報を保存しておく:
+# Sign + notarize + staple in one go.
+# First store your notarytool credentials:
 #   xcrun notarytool store-credentials swiftguard-notary \
-#     --apple-id "you@example.com" --team-id TEAMID --password <app専用パスワード>
+#     --apple-id "you@example.com" --team-id TEAMID --password <app-specific-password>
 SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" \
 NOTARY_PROFILE="swiftguard-notary" \
   ./scripts/build.sh dmg
 ```
 
-| 環境変数 | 説明 |
-|---------|------|
-| `SIGN_IDENTITY` | Developer ID 署名の Identity（未設定なら ad-hoc 署名） |
-| `NOTARY_PROFILE` | `notarytool` に保存済みのプロファイル名（設定時のみ公証＆ステープル） |
+| Environment variable | Description |
+|----------------------|-------------|
+| `SIGN_IDENTITY` | Developer ID signing identity (ad-hoc signing if unset) |
+| `NOTARY_PROFILE` | Saved `notarytool` profile name (notarize & staple only when set) |
 
 ---
 
-## 🏗 アーキテクチャ / Architecture
+## 🏗 Architecture
 
-AI ロジックとファイルスキャンは共通モジュール **`SwiftGuardCore`** に隔離され、CLI と GUI の両方から再利用されます。
+The AI logic and file scanning are isolated in the shared **`SwiftGuardCore`** module, reused by both the CLI and the GUI.
 
 ```
 SwiftGuard/
 ├── Package.swift
 ├── Sources/
-│   ├── SwiftGuardCore/        # 🧠 共通コア（CLI / GUI 共有）
-│   │   ├── AuditEngine.swift      # FoundationModels 呼び出し・ストリーミング
-│   │   ├── AuditCategory.swift    # 監査観点の定義（チェックリスト）
-│   │   ├── AuditPrompt.swift      # 観点からシステム指示を自動生成
-│   │   ├── RiskAssessment.swift   # @Generable による構造化リスク判定
-│   │   └── FileScanner.swift      # .swift ファイルの再帰収集
-│   ├── swiftguard/            # 💻 CLI（swift-argument-parser）
+│   ├── SwiftGuardCore/        # 🧠 Shared core (used by CLI & GUI)
+│   │   ├── AuditEngine.swift      # FoundationModels calls & streaming
+│   │   ├── AuditCategory.swift    # Audit dimensions (checklists)
+│   │   ├── AuditPrompt.swift      # Builds system instructions from dimensions
+│   │   ├── RiskAssessment.swift   # Structured risk verdict via @Generable
+│   │   └── FileScanner.swift      # Recursive .swift file collection
+│   ├── swiftguard/            # 💻 CLI (swift-argument-parser)
 │   │   ├── SwiftGuardCommand.swift
-│   │   └── Terminal.swift         # ANSI カラー / 区切り線
-│   └── SwiftGuardApp/         # 🖼 SwiftUI デスクトップアプリ
+│   │   └── Terminal.swift         # ANSI colors / separators
+│   └── SwiftGuardApp/         # 🖼 SwiftUI desktop app
 │       ├── SwiftGuardApp.swift
 │       ├── ContentView.swift
 │       ├── AuditViewModel.swift
@@ -247,66 +244,31 @@ SwiftGuard/
                  └───────────────────────────┘
 ```
 
-> **観点の拡張は簡単**: `Sources/SwiftGuardCore/AuditCategory.swift` の `AuditCategory.all` に
-> 1 要素を追加するだけで、CLI・GUI・pre-commit のプロンプトすべてに自動反映されます。
+> **Adding a dimension is easy**: append one entry to `AuditCategory.all` in
+> `Sources/SwiftGuardCore/AuditCategory.swift`, and it automatically flows into the
+> CLI, GUI, and pre-commit prompts.
 
 ---
 
-## 🧪 開発 / Development
+## 🧪 Development
 
 ```bash
-swift build        # ビルド
-swift test         # ユニットテスト
-swift run swiftguard ./Examples   # サンプルを監査
+swift build        # build
+swift test         # unit tests
+swift run swiftguard ./Examples   # audit the samples
 
-# Command Line Tools のみがアクティブな環境では Xcode のツールチェーンを指定:
+# If only the Command Line Tools are active, point at the Xcode toolchain:
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift build
 ```
 
 ---
 
-## 🤝 コントリビュート / Contributing
+## 🤝 Contributing
 
-Issue / PR を歓迎します。観点（プロンプト）の追加・改善、出力フォーマットの改善、多言語対応などのアイデアをお待ちしています。
-
----
-
-## 🇺🇸 Overview
-
-**SwiftGuard** audits your Swift code for safety and quality **entirely on-device**, using Apple's FoundationModels LLM. **Your source code never leaves your Mac** — no external APIs, no telemetry.
-
-Acting as a *"senior iOS/macOS engineer & security auditor"*, it reviews these dimensions and streams the results (run `swiftguard --rules` to list them):
-
-- 🔁 **Retain cycles / memory leaks**
-- 🧵 **Thread-safety & concurrency** (data races, `@MainActor` violations, off-main UI updates)
-- ⚡️ **Performance waste** (blocking I/O, O(n²) loops, needless copies)
-- 🔐 **Apple privacy-policy risks** (unauthorized location/contacts/photo access, leaking sensitive data)
-- 💥 **Crash resilience** (force unwraps `!`, `try!` / `as!`, out-of-range access)
-- 🧯 **Error handling** (swallowed errors, empty `catch {}`, ignored failures)
-
-It ships as both a **CLI** and a **SwiftUI desktop app**, plus a **Git pre-commit hook** that blocks commits containing critical issues. The AI logic lives in a shared `SwiftGuardCore` module reused by both front-ends.
-
-> **Note:** review output is in Japanese by default. To change the language, edit `AuditPrompt.systemInstructions` in `Sources/SwiftGuardCore/AuditPrompt.swift`.
-
-### Quick start
-
-```bash
-# Easiest — via Homebrew (no certificate, no Gatekeeper warning):
-brew install NagaYu/tap/swiftguard
-swiftguard ./Sources
-
-# Or from source:
-git clone https://github.com/NagaYu/SwiftGuard.git
-cd SwiftGuard
-swift build -c release
-swift run swiftguard ./Sources        # audit a directory
-./scripts/build.sh dmg                # build SwiftGuard.app + .dmg
-```
-
-**Requirements:** macOS 26+, an Apple-Intelligence-capable Mac with Apple Intelligence enabled, Xcode 26+ to build.
+Issues and PRs are welcome — new or improved audit dimensions (prompts), better output formatting, additional languages, and more. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
 ## 📄 License
 
-[MIT](LICENSE) © 2026 SwiftGuard Contributors — 個人・商用問わず無料で利用できます。
+[MIT](LICENSE) © 2026 SwiftGuard Contributors — free for personal and commercial use.
